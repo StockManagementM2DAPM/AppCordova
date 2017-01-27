@@ -20,6 +20,10 @@
 var MATERIAL = null;
 var ROOM = null;
 
+$(function(){
+    getAll($("#rooms_content"));
+});
+
 var app = {
     // Application Constructor
     initialize: function() {
@@ -36,14 +40,15 @@ var app = {
         $(document).on("pagecontainerchange",function(){   
             if($.mobile.activePage.attr("id") == "rooms"){
                 console.log("rooms");
+                getAll($("#rooms_content"));
             }
             else if($.mobile.activePage.attr("id") == "materials"){
-                    console.log("materials");
-                    getAll();
+                console.log("materials");
+                getAll($("#materials_content"));
             }
             else if($.mobile.activePage.attr("id") == "scan"){
-                    console.log("scan");
-                    $("#btn_Scan").click(startScan)
+                console.log("scan");
+                $("#btn_Scan").click(startScan)
             }
         });
     },
@@ -56,12 +61,12 @@ var app = {
 
 app.initialize();
 
+
 /*
- * opens scanner for QR-Codes
+ * opens scanner for QR-Codes and inializes MATERIAL or calls REST
  * params : NO
  * return : NO
  */
-
 function startScan(){
     cordova.plugins.barcodeScanner.scan(
         function (result) {
@@ -69,7 +74,12 @@ function startScan(){
                 "Result: " + result.text + "\n" +
                 "Format: " + result.format + "\n" +
                 "Cancelled: " + result.cancelled);
-            sendMovement(result.text);
+        
+            if(MATERIAL == null){
+                MATERIAL = result.text;
+                alert("Le matériel "+MATERIAL+" a bien été scanné.")
+            }else
+                sendMovement(result.text);
         }, 
         function (error) {
             alert("Scanning failed: " + error);
@@ -79,43 +89,44 @@ function startScan(){
 
 
 /*
- * 
- * params : 
- * return :
+ * Calls REST API to update MATERIAL's position and sets MATERIAL to null
+ * params : scannedId : String - contains the scanned object's id
+ * return : NO
  */
-
-function sendMovement(param){
-    if(MATERIAL == null){
-        MATERIAL = param;
-        alert("Le matériel "+MATERIAL+" a bien été scanné.")
-    }else{
-        $.ajax('http://jsonplaceholder.typicode.com/posts/1', {
-            method: 'PUT',
-            data: {
-                id: 1,
-                title: 'foo'+MATERIAL,
-                body: 'bar'+param,
-                userId: 1
-            }
-        }).then(function(data) {
-            console.log(data);
-        });
-        MATERIAL = null;
-    }
+function sendMovement(scannedId){
+    $.ajax('http://jsonplaceholder.typicode.com/posts/1', {
+        method: 'PUT',
+        data: {
+            id: 1,
+            title: 'foo'+MATERIAL,
+            body: 'bar'+scannedId,
+            userId: 1
+        }
+    }).then(function(data) {
+        console.log(data);
+    });
+    MATERIAL = null;
 }
 
-function getAll(){
+
+/*
+ * Get all results from a REST call and puts them in a listview inside the page
+ * passed in parameter
+ * params : container : div
+ * return : NO
+ */
+function getAll(container){
     $.ajax('http://jsonplaceholder.typicode.com/posts', {
         method: 'GET'
     }).then(function(data) {
         console.log(data);
-        var content = '<ul id="listv" style="text-transform:uppercase;" data-role="listview">';
+        var content = '<ul id="'+$.mobile.activePage.attr("id")+'_lv" style="text-transform:uppercase;" data-role="listview">';
         data.forEach(function(obj){
             content += '<li>'+obj+'</li>';
         });
         content+='</ul>';
-        $("#materials_content").html(content);
-        $("#listv").listview().listview("refresh");
+        container.html(content);
+        $('#'+$.mobile.activePage.attr("id")+'_lv').listview().listview("refresh");
     });
 }
 
