@@ -17,11 +17,12 @@
  * under the License.
  */
 
-var MATERIAL = null;
+var address = "http://192.168.43.133:8080/REST/webresources/";
+var EQUIPMENT = null;
 var ROOM = null;
 
 $(function(){
-    getAll($("#rooms_content"));
+    getAll($("#classroom_content"));
 });
 
 var app = {
@@ -38,13 +39,13 @@ var app = {
         this.receivedEvent('deviceready');
         $( ":jqmData(role='header')" ).toolbar({ defaults: true });
         $(document).on("pagecontainerchange",function(){   
-            if($.mobile.activePage.attr("id") == "rooms"){
+            if($.mobile.activePage.attr("id") == "classroom"){
                 console.log("rooms");
-                getAll($("#rooms_content"));
+                getAll($("#classroom_content"));
             }
-            else if($.mobile.activePage.attr("id") == "materials"){
-                console.log("materials");
-                getAll($("#materials_content"));
+            else if($.mobile.activePage.attr("id") == "equipment"){
+                console.log("equipments");
+                getAll($("#equipment_content"));
             }
             else if($.mobile.activePage.attr("id") == "scan"){
                 console.log("scan");
@@ -75,9 +76,9 @@ function startScan(){
                 "Format: " + result.format + "\n" +
                 "Cancelled: " + result.cancelled);
         
-            if(MATERIAL == null){
-                MATERIAL = result.text;
-                alert("Le matériel "+MATERIAL+" a bien été scanné.")
+            if(EQUIPMENT == null){
+                EQUIPMENT = result.text;
+                alert("L'objet "+EQUIPMENT+" a bien été scanné.")
             }else
                 sendMovement(result.text);
         }, 
@@ -116,13 +117,22 @@ function sendMovement(scannedId){
  * return : NO
  */
 function getAll(container){
-    $.ajax('http://jsonplaceholder.typicode.com/posts', {
+    var addr;
+    if($.mobile.activePage.attr("id") == "equipment")
+        addr = "equipment/chalkbox";
+    else
+        addr = "classroom";
+    console.log(address+addr);
+    $.ajax(address+addr, {
         method: 'GET'
     }).then(function(data) {
         console.log(data);
         var content = '<ul id="'+$.mobile.activePage.attr("id")+'_lv" style="text-transform:uppercase;" data-role="listview">';
         data.forEach(function(obj){
-            content += '<li>'+obj+'</li>';
+            if($.mobile.activePage.attr("id") == "equipment")
+                content += '<li>'+obj.name+'</li>';
+            else
+                content += '<li>'+obj.information.name+'</li>';
         });
         content+='</ul>';
         container.html(content);
